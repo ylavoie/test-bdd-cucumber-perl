@@ -1,0 +1,6 @@
+FEATURE[Feature:]
+WHITESPACE[ ]
+DESCRIPTION[Simple tests of \\Digest.pm]
+EOF[]
+__DIVIDER__
+Feature: Simple tests of \\Digest.pm

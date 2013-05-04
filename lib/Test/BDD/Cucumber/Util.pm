@@ -43,6 +43,34 @@ sub bs_unquote {
 	return $string;
 }
 
+# Add a null in after
+our $fake_backslash = "\N{U+FF3C}";
+sub encode_double_backslash {
+	my $string = shift;
+	$string =~ s/\\\\/\\$fake_backslash/g;
+	return $string;
+}
+
+sub decode_double_backslash {
+	my $string = shift;
+	$string =~ s/\\$fake_backslash/\\\\/g;
+	return $string;
+}
+
+
+=head2 escape_whitespace
+
+    Tab -> \t, CR -> \r, NL -> \n
+
+=cut
+
+sub escape_whitespace {
+	my $string = shift;
+	$string =~ s/\cM/\\r/g;
+	$string =~ s/\cJ/\\n/g;
+	return $string;
+}
+
 =head1 AUTHOR
 
 Peter Sergeant C<pete@clueball.com>
