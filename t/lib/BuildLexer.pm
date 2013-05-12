@@ -8,6 +8,13 @@ our $location = 'grammar/lines.csv';
 our $marker = '### LEXING RULES';
 our $class = 'lib/Test/BDD/Cucumber/Parser/LineLexer.pm';
 
+sub rewrite {
+	my $new_content = new_content();
+	open( my $fh, '>', $class ) || die $!;
+	print $fh $new_content;
+	close $fh;
+}
+
 sub new_content {
 	my $rules = serialize_rules(read_rules());
 	my ($before, $x, $after) = get_parts();

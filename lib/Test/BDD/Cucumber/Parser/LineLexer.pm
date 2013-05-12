@@ -36,11 +36,8 @@ Probably no user-serviceable parts here
 # ]
 
 ### LEXING RULES
-our %STATE_MACHINE = (
-	Start => [
-		[ FEATURE => COS => 'Feature', 'Test::BDD::Cucumber::Model::Line::Feature' ],
-	]
-);
+$STATE_MACHINE1 = {'COS' => [{'new_state' => 'General','type' => 'Background','match_on' => 'SCENARIO'},{'new_state' => 'General','type' => 'Scenario','match_on' => 'SCENARIO'},{'new_state' => 'General','type' => 'Tag','match_on' => 'TAGS'},{'new_state' => 'COS','type' => 'Comment','match_on' => 'COMMENT'},{'new_state' => 'COS','type' => 'Space','match_on' => 'BLANK'},{'new_state' => 'COS','type' => 'COS','match_on' => 'ANY'}],'PyString' => [{'new_state' => 'General','type' => 'PyMark','match_on' => 'PYMARK'},{'new_state' => 'PyString','type' => 'Quoted','match_on' => 'ANY'}],'General' => [{'new_state' => 'General','type' => 'Tag','match_on' => 'TAGS'},{'new_state' => 'General','type' => 'Scenario','match_on' => 'SCENARIO'},{'new_state' => 'General','type' => 'Background','match_on' => 'BACKGROUND'},{'new_state' => 'General','type' => 'Step','match_on' => 'STEP'},{'new_state' => 'General','type' => 'Examples','match_on' => 'EXAMPLES'},{'new_state' => 'General','type' => 'Table','match_on' => 'TABLE'},{'new_state' => 'General','type' => 'Comment','match_on' => 'COMMENT'},{'new_state' => 'General','type' => 'Space','match_on' => 'BLANK'},{'new_state' => 'PyString','type' => 'PyMark','match_on' => 'PYMARK'}],'Start' => [{'new_state' => 'COS','type' => 'Feature','match_on' => 'FEATURE'},{'new_state' => 'Start','type' => 'Space','match_on' => 'BLANK'},{'new_state' => 'Start','type' => 'Comment','match_on' => 'COMMENT'},{'new_state' => 'Start','type' => 'Tag','match_on' => 'TAGS'}]};
+our %STATE_MACHINE = %$STATE_MACHINE1;
 ### LEXING RULES
 
 # Need to pull in all of those classes
