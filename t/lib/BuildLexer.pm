@@ -60,7 +60,7 @@ sub serialize_rules {
 	my $rules = shift;
 	local $Data::Dumper::Indent = 0;
 	local $Data::Dumper::Varname = 'STATE_MACHINE';
-	return Dumper( $rules );
+	return 'my ' . Dumper( $rules );
 }
 
 1;
