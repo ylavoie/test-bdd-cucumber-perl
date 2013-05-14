@@ -2,7 +2,6 @@ package Test::BDD::Cucumber::Parser::LineLexer;
 
 use strict;
 use warnings;
-use Try::Tiny;
 use Test::BDD::Cucumber::Parser::Error;
 
 =head1 NAME
@@ -30,21 +29,16 @@ Probably no user-serviceable parts here
 =cut
 
 # The below part is auto-generated from the lines.csv file as part of the build
-# process... The format is:
-# Start State => [
-#	[ Regex name => Line Type => End State ]
-# ]
-
+# process... Don't hand-modify it!
 ### LEXING RULES
-my $STATE_MACHINE1 = {'COS' => [{'new_state' => 'General','type' => 'Background','match_on' => 'SCENARIO'},{'new_state' => 'General','type' => 'Scenario','match_on' => 'SCENARIO'},{'new_state' => 'General','type' => 'Tag','match_on' => 'TAGS'},{'new_state' => 'COS','type' => 'Comment','match_on' => 'COMMENT'},{'new_state' => 'COS','type' => 'Space','match_on' => 'BLANK'},{'new_state' => 'COS','type' => 'COS','match_on' => 'ANY'}],'PyString' => [{'new_state' => 'General','type' => 'PyMark','match_on' => 'PYMARK'},{'new_state' => 'PyString','type' => 'Quoted','match_on' => 'ANY'}],'General' => [{'new_state' => 'General','type' => 'Tag','match_on' => 'TAGS'},{'new_state' => 'General','type' => 'Scenario','match_on' => 'SCENARIO'},{'new_state' => 'General','type' => 'Background','match_on' => 'BACKGROUND'},{'new_state' => 'General','type' => 'Step','match_on' => 'STEP'},{'new_state' => 'General','type' => 'Examples','match_on' => 'EXAMPLES'},{'new_state' => 'General','type' => 'Table','match_on' => 'TABLE'},{'new_state' => 'General','type' => 'Comment','match_on' => 'COMMENT'},{'new_state' => 'General','type' => 'Space','match_on' => 'BLANK'},{'new_state' => 'PyString','type' => 'PyMark','match_on' => 'PYMARK'}],'Start' => [{'new_state' => 'COS','type' => 'Feature','match_on' => 'FEATURE'},{'new_state' => 'Start','type' => 'Space','match_on' => 'BLANK'},{'new_state' => 'Start','type' => 'Comment','match_on' => 'COMMENT'},{'new_state' => 'Start','type' => 'Tag','match_on' => 'TAGS'}]};
+my $STATE_MACHINE1 = {'COS' => [{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Background','type' => 'Background','match_on' => 'SCENARIO'},{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Scenario','type' => 'Scenario','match_on' => 'SCENARIO'},{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Tag','type' => 'Tag','match_on' => 'TAGS'},{'new_state' => 'COS','class' => 'Test::BDD::Cucumber::Model::Line::Comment','type' => 'Comment','match_on' => 'COMMENT'},{'new_state' => 'COS','class' => 'Test::BDD::Cucumber::Model::Line::Space','type' => 'Space','match_on' => 'BLANK'},{'new_state' => 'COS','class' => 'Test::BDD::Cucumber::Model::Line::COS','type' => 'COS','match_on' => 'ANY'}],'PyString' => [{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::PyMark','type' => 'PyMark','match_on' => 'PYMARK'},{'new_state' => 'PyString','class' => 'Test::BDD::Cucumber::Model::Line::Quoted','type' => 'Quoted','match_on' => 'ANY'}],'General' => [{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Tag','type' => 'Tag','match_on' => 'TAGS'},{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Scenario','type' => 'Scenario','match_on' => 'SCENARIO'},{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Background','type' => 'Background','match_on' => 'BACKGROUND'},{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Step','type' => 'Step','match_on' => 'STEP'},{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Examples','type' => 'Examples','match_on' => 'EXAMPLES'},{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Table','type' => 'Table','match_on' => 'TABLE'},{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Comment','type' => 'Comment','match_on' => 'COMMENT'},{'new_state' => 'General','class' => 'Test::BDD::Cucumber::Model::Line::Space','type' => 'Space','match_on' => 'BLANK'},{'new_state' => 'PyString','class' => 'Test::BDD::Cucumber::Model::Line::PyMark','type' => 'PyMark','match_on' => 'PYMARK'}],'Start' => [{'new_state' => 'COS','class' => 'Test::BDD::Cucumber::Model::Line::Feature','type' => 'Feature','match_on' => 'FEATURE'},{'new_state' => 'Start','class' => 'Test::BDD::Cucumber::Model::Line::Space','type' => 'Space','match_on' => 'BLANK'},{'new_state' => 'Start','class' => 'Test::BDD::Cucumber::Model::Line::Comment','type' => 'Comment','match_on' => 'COMMENT'},{'new_state' => 'Start','class' => 'Test::BDD::Cucumber::Model::Line::Tag','type' => 'Tag','match_on' => 'TAGS'}]};
 our %STATE_MACHINE = %$STATE_MACHINE1;
 ### LEXING RULES
 
 # Need to pull in all of those classes
 my %_classes;
 for (map {@$_} values %STATE_MACHINE) {
-	my ( $re, $next, $name, $class ) = @$_;
-	$_classes{$class}++;
+	$_classes{$_->{'class'}}++;
 }
 for (keys %_classes) {
 	eval "require $_";
@@ -73,7 +67,7 @@ sub parse {
 	my $state       = $options->{'state'} // 'Start'; # Don't use this, k?
 
 	# Don't need no speed
-	my @lines = split(/(\r\n|\n)/, $options->{'content'});
+	my @lines = split(/(\r\n|\n|\r)/, $options->{'content'});
 
 	# Where we store the parsed lines
 	my @line_objects;
@@ -84,28 +78,27 @@ sub parse {
 
 		# Any of them actually match?
 		for ( @options ) {
-			my ( $re_name, $next, $name, $class ) = @$_;
+			my ( $re_name, $next, $name, $class ) =
+				@$_{qw/match_on new_state type class/};
 			my $re = _re($re_name);
 
-			if ( $line =~ $re ) {
+			if ( my @matches = ($line =~ $re) ) {
 
 				# Attempt to create the line object
-				my $object =
-					try {
-						$class->new({ content => $line })
-					}
-					# If it fails, add some sensible information to the call
-					# stack.
-					catch {
-						Test::BDD::Cucumber::Parser::Error->throw({
-							line_number => $line_number,
-							state       => $state,
-							content     => $line,
-							message     => sprintf(
-								"Line matched \"%s\" %s but couldn't create a %s object via %s",
-								$re_name, $re, $name, $class )
-						});
-					};
+				my $object = $class->new({
+					content => $line,
+					matched => \@matches,
+				});
+				# if ( $@ ) {
+				# 	Test::BDD::Cucumber::Parser::Error->throw({
+				# 		line_number => $line_number,
+				# 		state       => $state,
+				# 		content     => $line,
+				# 		message     => sprintf(
+				# 			"Line matched \"%s\" %s but couldn't create a %s object via %s",
+				# 			$re_name, $re, $name, $class )
+				# 	});
+				# }
 
 				# Assuming that worked, save it, update the current line and
 				# state, and move to the next line
@@ -117,15 +110,16 @@ sub parse {
 		}
 
 		# If we didn't hit that, then none of our options matched :-/
-		Test::BDD::Cucumber::Parser::Error->throw({
-			line_number => $line_number,
-			state       => $state,
-			content     => $line,
-			message     => sprintf(
+		# Test::BDD::Cucumber::Parser::Error->throw({
+		# 	line_number => $line_number,
+		# 	state       => $state,
+		# 	content     => $line,
+		# 	message     =>
+
+		die sprintf(
 				"Parser in state [%s] couldn't match any of the allowed line types, which are: [%s]",
 				$state, join( ';', map { $_->[2] } @options )
-			),
-		});
+		);
 
 	}
 

@@ -50,6 +50,7 @@ sub read_rules {
 			new_state => $new,
 			match_on  => $re,
 			type      => $type,
+			class     => 'Test::BDD::Cucumber::Model::Line::' . $type,
 		})
 	}
 

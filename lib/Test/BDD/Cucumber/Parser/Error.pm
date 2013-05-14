@@ -3,17 +3,31 @@ package Test::BDD::Cucumber::Parser::Error;
 use Moose;
 extends 'Throwable::Error';
 
-has line_number => ( is => 'ro', isa => 'Int' );
-has state       => ( is => 'ro', isa => 'Str' );
-has content     => ( is => 'ro', isa => 'Str' );
+sub simple_message {
+	my $self = shift;
+	use Data::Dumper; print Dumper($self);
+	exit;
+	return $self->message . "\t" . $self->stack_trace->as_string . "\n"
+}
+
+sub stack_list {
+	my $self = shift;
+
+	# Get the parent node
+	my $parent = $self->previous_exception();
+
+	# Base case
+	return $self->simple_message unless $parent;
+	# Non-object parent error
+	return ($parent, $self->simple_message) unless
+		( ref $parent && $parent->can('simple_message') );
+	# Recurse
+	return ($parent->stack_list, $self->simple_message);
+}
 
 sub as_string {
 	my $self = shift;
-	sprintf(
-		"> Line:%2d: [%s]\n> Parser state: %s\n> Error: %s\n---\n%s",
-		$self->line_number, $self->content, $self->state,
-		$self->message, $self->stack_trace
-	);
+	return join "\n---\n", ("Parser error", $self->stack_list);
 }
 
 1;
