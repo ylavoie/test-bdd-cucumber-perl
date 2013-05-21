@@ -5,7 +5,7 @@ use warnings;
 
 our @TOKENS = (
 	[ TEXT        => qr/^\\(.)/ ], # Escapes
-	[ COMMENT     => qr/^# ?(.*)/ ],
+	[ COMMENT     => qr/^\s*# ?(.*)/ ],
 	[ QUOTE       => qr/^(")/   ],
 	[ TAG         => qr/^(\@)/  ],
 	[ PLACE_OPEN  => qr/^(\<)/  ],
@@ -107,6 +107,75 @@ our %RULES = (
 		return @tags, @comments;
 	},
 
+	PLACEHOLDERS => sub {
+		my @tokens = @_;
+		my @new_tokens;
+
+		while ( @tokens ) {
+			my $token = shift( @tokens );
+			my ($type, $payload) = @$token;
+			# OK, let's see how this pans out...
+			if ($type eq 'PLACE_OPEN') {
+				# It's only possible if we're followed directly by TEXT
+				# One example of that /not/ being true is if we're out of
+				# @tokens!
+				unless (@tokens) {
+					push( @new_tokens, $token );
+					next;
+				}
+
+				# Another example of that is if the next token isn't actually
+				# TEXT
+				my $next = shift(@tokens);
+				unless ( $next->[0] eq 'TEXT' ) {
+					push( @new_tokens, ( $token, $next ) );
+					next;
+				}
+
+				# From here on out, we're happy to accept spaces or text...
+				my @token_text = $next;
+				while ( 1 ) {
+					my $this = shift(@tokens);
+					# If we've run out of tokens, that's all folks
+					unless ( defined $this ) {
+						push( @new_tokens, ( $token, @token_text ) );
+						last;
+					}
+
+					# If it's text or space, that's simple, keep going
+					if ( $this->[0] eq 'TEXT' || $this->[0] eq 'SPACE' ) {
+						push( @token_text, $this );
+						next;
+
+					# If it's a terminator, we're happy... as long as the last
+					# token was text
+					} elsif (
+						$this->[0] eq 'PLACE_CLOSE' &&
+						$token_text[-1]->[0] eq 'TEXT'
+					) {
+						# Add a placeholder to the token queue, and then
+						# break out of this loop
+						my ($as_text) = filter(qw/TO_TEXT COMBINE_TEXT/)
+							->( @token_text );
+						$as_text->[0] = 'PLACEHOLDER';
+						push( @new_tokens, $as_text );
+						last;
+
+					# Otherwise, bail
+					} else {
+						push( @new_tokens, ( $token, @token_text, $this ) );
+						last;
+					}
+				}
+
+			} else {
+				push( @new_tokens, $token );
+			}
+		}
+
+		return @new_tokens;
+	},
+
 	# Gets rid of all SPACE tokens
 	REMOVE_SPACES => sub { grep { $_->[0] ne 'SPACE' } @_ },
 
@@ -122,6 +191,45 @@ our %RULES = (
 		} @_
 	},
 
+	STEP_CLEAN => _convert_to('TEXT', qw/COMMENT PLACEHOLDER QUOTE/),
+
+	TABLE => sub {
+		# Remove spaces before and after each PIPE
+		my @old_tokens = @_;
+		my @new_tokens;
+
+		while ( my $token = shift @old_tokens ) {
+			if ( $token->[0] eq 'PIPE' ) {
+				# Remove preceeding if it's there
+				pop( @new_tokens )
+					if ($new_tokens[-1] && $new_tokens[-1]->[0] eq 'SPACE');
+
+				# Remove next space if it's there
+				shift( @old_tokens )
+					if $old_tokens[0] && $old_tokens[0]->[0] eq 'SPACE';
+
+				# If the previous token was a PIPE too, make our life a little
+				# easier by adding a blank text item...
+				push( @new_tokens, [TEXT => ''] )
+					if $new_tokens[-1] && $new_tokens[-1]->[0] eq 'PIPE';
+
+			}
+			push( @new_tokens, $token );
+		}
+
+		@new_tokens = _convert_to('TEXT', qw/PIPE COMMENT/)->(@new_tokens);
+		@new_tokens = filter('COMBINE_TEXT')->(@new_tokens);
+
+		my @values =
+			map { [ CELL => $_->[1] ] }
+			grep { $_->[0] eq 'TEXT' }
+			@new_tokens;
+
+		my ($comment) = grep { $_->[0] eq 'COMMENT' } @new_tokens;
+		return (@values, $comment);
+
+	},
+
 	TO_COMMENT => _convert_to('COMMENT'),
 	TO_TEXT    => _convert_to('TEXT'),
 	TO_TEXT_AND_COMMENTS => _convert_to('TEXT', 'COMMENT'),
@@ -130,12 +238,17 @@ our %RULES = (
 	TO_TAGS => _convert_to('TEXT', qw/COMMENT TAG SPACE/),
 );
 
+my $text_and_comments = filter(qw/TO_TEXT_AND_COMMENTS COMBINE_TEXT/);
+
 our %TYPES = (
 	Background => filter(qw/REMOVE_SPACES COMMENTS_ONLY/),
 	Comment    => filter(qw/TO_TEXT COMBINE_TEXT TO_COMMENT/),
-	# Changes everything except comments in to text
-	Feature    => filter(qw/TO_TEXT_AND_COMMENTS COMBINE_TEXT/),
+	COS        => $text_and_comments,
+	Example    => filter(qw/REMOVE_SPACES COMMENTS_ONLY/),
+	Feature    => $text_and_comments,
 	Space      => sub { @_ },
+	Step       => filter(qw/PLACEHOLDERS SPACE_TO_TEXT STEP_CLEAN COMBINE_TEXT/),
+	Table      => filter(qw/TABLE/),
 	Tag        => filter(qw/TO_TAGS COMBINE_TEXT MAKE_TAGS/),
 );
 
@@ -158,7 +271,7 @@ sub compose {
     : sub {@_}
 }
 
-sub filter {compose( map { $RULES{$_} } @_)}
+sub filter {compose( map { $RULES{$_} || die $_ } @_)}
 
 sub parse {
 	my ($class, $type, $input) = @_;

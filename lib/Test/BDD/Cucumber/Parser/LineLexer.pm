@@ -141,27 +141,3 @@ our %LINE_RE = (
 );
 
 sub _re { return $LINE_RE{$_[0]}; }
-
-
-__DATA__
-Start,Feature,COS,FEATURE
-Start,Space,Start,BLANK
-Start,Comment,Start,COMMENT
-Start,Tag,Start,TAGS
-COS,Background,General,BACKGROUND
-COS,Scenario,General,SCENARIO
-COS,Tag,General,TAGS
-COS,Comment,COS,COMMENT
-COS,Space,COS,BLANK
-COS,COS,COS,ANY
-General,Tag,General,TAGS
-General,Scenario,General,SCENARIO
-General,Example,General,EXAMPLE
-General,Background,General,BACKGROUND
-General,Step,General,STEP
-General,Table,General,TABLE
-General,Comment,General,COMMENT
-General,Space,General,BLANK
-General,PyMark,PyString,PYMARK
-PyString,PyMark,General,PYMARK
-PyString,Quoted,PyString,ANY
