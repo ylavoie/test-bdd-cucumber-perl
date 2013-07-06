@@ -2,6 +2,7 @@ package Test::BDD::Cucumber::Util;
 
 use strict;
 use warnings;
+use Carp qw/croak/;
 
 =head1 NAME
 
@@ -41,6 +42,22 @@ sub bs_unquote {
 	my $string = shift;
 	$string =~ s/$marker_start(\d+)$marker_end/chr($1)/ge;
 	return $string;
+}
+
+=head2 utf8_slurp
+
+Read the content of a utf8-encoded file in to a string
+
+=cut
+
+sub utf8_slurp {
+    my $filename = shift;
+    open(my $fh, "<:encoding(UTF-8)", $filename) ||
+        croak "Can't open [$filename] for reading: " . $!;
+    my $content = join '', <$fh>;
+    close $fh;
+
+    return $content;
 }
 
 =head1 AUTHOR

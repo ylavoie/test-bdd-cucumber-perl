@@ -1,4 +1,14 @@
 
+New Tokenizer
+    - Get everything running off it
+    - Make sure colorization works right
+    - Languages!
+    - Fix indentation
+
+---
+
+
+
 - [ ] Make TAP output for scenario outlines interpolate correctly
 - [ ] Get passing against Cucumber-Features
 	- [ ] comments.feature

@@ -3,9 +3,13 @@ package Test::BDD::Cucumber::Parser::Line;
 use strict;
 use warnings;
 
+# Parser states that we'll localize for diag
+our $line_type;
+
 our @TOKENS = (
 	[ TEXT        => qr/^\\(.)/ ], # Escapes
-	[ COMMENT     => qr/^\s*# ?(.*)/ ],
+	[ COMMENT     => qr/^\s*(# ?.*)/ ],
+	[ PYMARK      => qr/^(""")/ ],
 	[ QUOTE       => qr/^(")/   ],
 	[ TAG         => qr/^(\@)/  ],
 	[ PLACE_OPEN  => qr/^(\<)/  ],
@@ -21,11 +25,24 @@ sub _only {
 	my %allowed = map { $_ => 1 } @allowed;
 
 	return sub {
-		my @bad_tokens = grep {! $allowed{$_->[0]} } @_;
-		if ( @bad_tokens ) {
-			die "Unexpected content: " . join ' ', map { $_->[1] } @bad_tokens
+		my @tokens = @_;
+		my @ok;
+
+		for my $token (@tokens) {
+			unless ( $allowed{$token->[0]} ) {
+				die sprintf(
+					"Parser error while tokenizing a %s line:\n" .
+					"  After: [%s]" .
+					"  Found: [%s], type [%s]" .
+					"which isn't allowed here\n",
+					$line_type,
+					(join '', map { $_->[1] } @ok),
+					$token->[1], $token->[0],
+				);
+			};
+			push( @ok, $token );
 		}
-		return @_;
+		return @ok;
 	}
 }
 
@@ -39,7 +56,7 @@ sub _convert_to {
 			if ( $except{$type} ) {
 				$_;
 			} else {
-				[ $to => $payload ]
+			     [ $to => $payload ]
 			}
 		} @_;
 	};
@@ -176,6 +193,16 @@ our %RULES = (
 		return @new_tokens;
 	},
 
+	# PyMark - space and Pymark only, then kill any extra space
+	PYMARK => sub {
+		my @tokens = _only(qw/SPACE PYMARK/)->( @_ );
+		if ( $tokens[0]->[0] eq 'PYMARK' ) {
+			return $tokens[0];
+		} else {
+			return @tokens[0,1];
+		}
+	},
+
 	# Gets rid of all SPACE tokens
 	REMOVE_SPACES => sub { grep { $_->[0] ne 'SPACE' } @_ },
 
@@ -246,6 +273,7 @@ our %TYPES = (
 	COS        => $text_and_comments,
 	Example    => filter(qw/REMOVE_SPACES COMMENTS_ONLY/),
 	Feature    => $text_and_comments,
+	PyMark     => filter(qw/PYMARK/),
 	Space      => sub { @_ },
 	Step       => filter(qw/PLACEHOLDERS SPACE_TO_TEXT STEP_CLEAN COMBINE_TEXT/),
 	Table      => filter(qw/TABLE/),
@@ -275,7 +303,9 @@ sub filter {compose( map { $RULES{$_} || die $_ } @_)}
 
 sub parse {
 	my ($class, $type, $input) = @_;
-	return $TYPES{ $type }->( $class->lex( $input ) );
+	local $line_type = $type;
+
+    return $TYPES{ $type }->( $class->lex( $input ) );
 }
 
 # Dumb tokens
@@ -295,46 +325,3 @@ sub lex {
 	}
 	return @found;
 }
-
-
-__DATA__
-
-# When I've added "<data>" to the object # Blah
-# KEYWORD: When
-# TEXT: I've added
-# QUOTE: "
-# PLACEHOLDER: data
-# QUOTE: "
-# TEXT: to the object
-
-Background
-Comment
-COS
-Examples
-Feature
-PyMark
-Quoted
-Scenario
-Space
-Step
-Table
-Tag
-
-our %types = (
-	ESCAPED => {
-		re      =>
-		combine => 1,
-		gives   => 'TEXT',
-	},
-	COMMENT => {
-		re    => qr/^# ?(.+)/,
-		gives => 'TEXT',
-	},
-);
-
-sub tokenize {
-	my ( $input, @features ) = @_;
-
-}
-
-1;
