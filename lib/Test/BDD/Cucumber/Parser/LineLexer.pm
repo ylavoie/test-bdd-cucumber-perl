@@ -19,7 +19,7 @@ Probably no user-serviceable parts here
 
 =head1 SYNOPSIS
 
- my $document = Test::BDD::Cucumber::Parser::LineLexer->parse({
+ my @lines = Test::BDD::Cucumber::Parser::LineLexer->parse({
 	content  => "",
 	language => Test::BDD::Cucumber::Language object,
 	line     => 0, # Default
@@ -42,7 +42,7 @@ for (map {@$_} values %STATE_MACHINE) {
 	$_classes{$_->{'class'}}++;
 }
 for (keys %_classes) {
-	eval "require $_";
+	eval "require $_" || die $!;
 }
 
 =head2 parse
@@ -87,9 +87,8 @@ sub parse {
 
 				# Create the line object
 				my $object = $class->new({
-					content => $line,
+					raw_content => $line,
 					number  => $line_number,
-					matched => \@matches,
 					tokens  => [
 						Test::BDD::Cucumber::Parser::Tokenize->parse({
 							line_type => $name,

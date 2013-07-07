@@ -26,7 +26,7 @@ The L<Test::BDD::Cucumber::Model::Document> object this line belongs to.
 
 =cut
 
-has 'document'    => ( is => 'rw', isa => 'Test::BDD::Cucumber::Model::Document' );
+# has 'document'    => ( is => 'rw', isa => 'Test::BDD::Cucumber::Model::Document' );
 
 =head2 raw_content
 
@@ -79,11 +79,11 @@ Returns a string with the filename and line number
 
 =cut
 
-sub debug_summary {
-	my $self = shift;
-	my $filename = $self->filename;
-	return "Input: $filename line " . $self->number . ": [" . $self->raw_content . "]";
-}
+#sub debug_summary {
+#	my $self = shift;
+#	my $filename = $self->filename;
+#	return "Input: $filename line " . $self->number . ": [" . $self->raw_content . "]";
+#}
 
 =head2 filename
 
@@ -92,10 +92,10 @@ loaded from a string
 
 =cut
 
-sub filename {
-    my $self = shift;
-    $self->document->filename || '[String]';
-}
+# sub filename {
+#    my $self = shift;
+#    $self->document->filename || '[String]';
+# }
 
 =head2 is_blank
 

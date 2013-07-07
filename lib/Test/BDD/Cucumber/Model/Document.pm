@@ -37,7 +37,7 @@ objects
 =cut
 
 has 'lines'    => ( is => 'rw', default => sub {[]},
-	isa => 'ArrayRef[Test::BDD::Cucumber::Model::Line]' );
+	isa => 'ArrayRef[Test::BDD::Cucumber::Model::Line::Base]' );
 
 =head1 OTHER
 

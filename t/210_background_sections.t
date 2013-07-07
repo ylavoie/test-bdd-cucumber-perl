@@ -10,9 +10,11 @@ use Test::BDD::Cucumber::Harness::Data;
 
 my $feature = Test::BDD::Cucumber::Parser->parse_string(
 <<HEREDOC
+\@foo
 Feature: Test Feature
 	Conditions of satisfaction
 
+	\@bar \@baz
 	Background:
 		Given a passing step called 'background-foo'
 		Given a background step that sometimes passes

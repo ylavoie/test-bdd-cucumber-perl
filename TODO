@@ -1,6 +1,7 @@
 
 New Tokenizer
     - Get everything running off it
+    - Make sure we have some good messages for error conditions
     - Make sure colorization works right
     - Languages!
     - Fix indentation

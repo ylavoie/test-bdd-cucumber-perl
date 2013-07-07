@@ -27,7 +27,7 @@ C<Feature> keyword was found on
 
 =cut
 
-has 'name_line'    => ( is => 'rw', isa => 'Test::BDD::Cucumber::Model::Line' );
+has 'line'    => ( is => 'rw', isa => 'Test::BDD::Cucumber::Model::Line::Base' );
 
 =head2 satisfaction
 
@@ -35,8 +35,7 @@ An arrayref of strings of the Conditions of Satisfaction
 
 =cut
 
-has 'satisfaction' => ( is => 'rw', isa => 'ArrayRef[Test::BDD::Cucumber::Model::Line]',
-	default => sub {[]});
+has 'satisfaction' => ( is => 'rw', isa => 'ArrayRef[Str]', default => sub {[]});
 
 =head2 document
 
@@ -73,6 +72,11 @@ Scenarios.
 =cut
 
 has 'tags' => ( is => 'rw', isa => 'ArrayRef[Str]', default => sub {[]} );
+
+sub add_tags {
+    my ( $self, $tag_line ) = @_;
+    push( @{$self->tags}, $tag_line->tags );
+}
 
 =head1 AUTHOR
 

@@ -1,5 +1,13 @@
 package Test::BDD::Cucumber::Parser;
 
+use strict;
+use warnings;
+
+use List::MoreUtils qw/part/;
+
+use Test::BDD::Cucumber::Parser::LineLexer;
+use Test::BDD::Cucumber::Model::Feature;
+
 =head1 NAME
 
 Test::BDD::Cucumber::Parser - Parse Feature files
@@ -27,6 +35,201 @@ L<Test::BDD::Cucumber::Model::Feature> object on success.
 
 use strict;
 use warnings;
+
+sub parse_string {
+	my ( $self, $string ) = @_;
+	return $self->_feature_from_string( $string );
+}
+
+sub _feature_from_string {
+	my ( $class, $string ) = @_;
+
+	# Turn this in to a series of lines
+	my @lines = Test::BDD::Cucumber::Parser::LineLexer->parse({
+		content  => $string,
+		language => bless {}, "Test::BDD::Cucumber::Language",
+ 	});
+
+ 	# Get rid of the inactive ones
+ 	@lines = grep { ! $_->inactive } @lines;
+
+ 	# We need to do some funky things with tags, the feature line, and COS to
+ 	# start with, and then the document becomes a little more sane to parse.
+ 	my ( $tags, $features, $cos );
+ 	( $tags, $features, $cos, @lines ) = $class->_extract(
+ 		['Tag', 'Feature', 'COS'], @lines
+ 	);
+
+ 	my $feature_line = shift( @$features );
+
+ 	# No feature?!
+ 	unless ( $feature_line ) {
+ 		die "Parse error: unexpected line before feature: " .
+ 			[ @$cos, @lines ]->[0];
+ 		# CATCH EOF HERE TOO
+ 	}
+
+ 	# Build the feature object
+ 	my $feature = Test::BDD::Cucumber::Model::Feature->new({
+		name         => $feature_line->name,
+		name_line    => $feature_line,
+		satisfaction => [ map { $_->text } @$cos  ],
+		tags         => [ map { $_->tags } @$tags ],
+	});
+
+ 	use Data::Dumper; die Dumper $feature;
+
+}
+
+sub _extract {
+	my ( $class, $specs, @lines ) = @_;
+	my $top_level_matches = [];
+
+	while (my $spec = shift( @$specs )) {
+		# Where we'll keep all matches against this spec
+		my $sub_matches = [];
+		push( @$top_level_matches, $sub_matches );
+
+		# Grab each line matching that spec
+		while (my $line = shift( @lines )) {
+			if ( $line->type eq $spec ) {
+				push( $sub_matches, $line );
+			} else {
+				unshift( @lines, $line );
+				last;
+			}
+		}
+	}
+
+	return @$top_level_matches, @lines;
+}
+
+#	# Nest these lines.
+#	my $root = [];
+#	my $tags;
+
+#	while ( my $line = shift @lines ) {
+#
+#	}
+
+	# And now basically, we're going to keep collapsing this list in to itself
+
+
+
+	# First, we're going to get rid of any inactive lines - so comments and
+	# spaces.
+
+
+	# Next we upgrade feature, background, and scenario lines in to objects
+	# @lines = map { $_->has_children ? $_->to_model : $_ } @lines;
+
+	# # Fold in tags to any object that'll accept them
+	# my $accepts_tags;
+	# @lines = reverse map {
+	# 	# If it's a tags line, give it to the last tag-accepting item
+	# 	if ( eval { $_->type eq 'Tag' } ) {
+	# 		$accepts_tags->add_tags( $_ ); ();
+	# 	# If it accepts tags, say so
+	# 	} elsif ( eval { $_->can('add_tags') } ) {
+	# 		$accepts_tags = $_;
+	# 	# Passthrough
+	# 	} else {
+	# 		$_
+	# 	}
+	# } reverse @lines;
+
+	# # Fold in COS
+	# my $feature = $lines[0];
+	# @lines = map {
+	# 	if ( eval { $_->type eq 'COS' } ) {
+	# 		push( @{$feature->satisfaction}, $_->text ); ();
+	# 	} else {
+	# 		$_
+	# 	}
+	# } @lines;
+
+
+
+	# use Data::Dumper; print Dumper \@lines; exit;
+
+	# Split the lines up in to sensible parts
+# 	my ( $feature_lines, @scenario_lines ) = $class->_group_lines( @lines );
+
+ 	# Create the feature
+ #	my $feature = $class->_make_feature( @$feature_lines );
+
+ 	# Create the scenarios
+ #	for my $scenario_lines ( @scenario_lines ) {
+ #		my $scenario = $class->_make_scenario( @$scenario_lines );
+ #		push( @{ $feature->scenarios }, $scenario );
+ #	}
+
+ #	return $feature;
+
+
+sub _group_lines {
+	my ( $class, @lines ) = @_;
+
+	# Get rid of inactive lines
+
+
+	my @groups;
+	my $child_flag;
+	my $current_group = [];
+
+	while ( my $line = shift @lines ) {
+
+		# Are we trying to pick all the children steps?
+		if ( $child_flag ) {
+			# Current line is a child, add to the current group
+			if ( $line->is_child ) {
+				push( @$current_group, $line );
+			# Current line is not a child, so save current group, and start
+			# again
+			} else {
+				$child_flag = 0;
+				push( @groups, $current_group );
+				$current_group = [];
+				unshift( @lines, $line );
+			}
+		} else {
+			$child_flag = 1 if $line->has_children();
+			push( @$current_group, $line );
+		}
+
+	}
+
+	return @groups;
+}
+
+sub _make_feature {
+	my ( $class, @lines ) = @_;
+
+	my ( $feature_line, $cos, $tags ) = part {
+		{
+			Feature => 0,
+			COS     => 1,
+			Tag     => 2,
+		}->{ $_->type }
+	} @lines;
+
+	my $feature = Test::BDD::Cucumber::Model::Feature->new({
+		name         => $feature_line->[0]->feature_name,
+		name_line    => $feature_line->[0],
+		satisfaction => $cos,
+		tags         => [ map { $_->tags } @$tags ],
+	});
+}
+
+sub _make_scenario {
+	my ( $class, @lines ) = @_;
+}
+
+1;
+
+__DATA__
+
+
 use Ouch;
 
 use File::Slurp;

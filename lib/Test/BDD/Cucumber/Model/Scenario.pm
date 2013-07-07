@@ -51,7 +51,7 @@ the C<Scenario> keyword is.
 
 =cut
 
-has 'line'       => ( is => 'rw', isa => 'Test::BDD::Cucumber::Model::Line' );
+has 'line'       => ( is => 'rw', isa => 'Test::BDD::Cucumber::Model::Line::Base' );
 
 =head2 tags
 
@@ -61,6 +61,11 @@ feature.
 =cut
 
 has 'tags' => ( is => 'rw', isa => 'ArrayRef[Str]', default => sub {[]} );
+
+sub add_tags {
+    my ( $self, $tag_line ) = @_;
+    push( @{$self->tags}, $tag_line->tags );
+}
 
 =head1 AUTHOR
 
