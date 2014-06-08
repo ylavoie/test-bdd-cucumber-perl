@@ -82,7 +82,7 @@ sub scenario_done { print "\n"; }
 
 sub step {}
 sub step_done {
-    my ($self, $context, $result ) = @_;
+    my ($self, $context, $result, $locations ) = @_;
 
     my $color;
     my $follow_up = [];
