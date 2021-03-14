@@ -701,6 +701,7 @@ sub _test_output {
     my $idx = 0;
 
     $fmt->set_handles([ $stdout, $stdout ]);
+    $fmt->encoding('utf8');
     $self->_test_output_from_subevents($events, $fmt, \$idx);
     close $stdout;
 

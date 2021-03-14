@@ -85,6 +85,9 @@ sub make_iterator {
     my ( $input_out_fh, $output_out_fh );
     pipe $input_out_fh, $output_out_fh;
 
+    #Switch to utf8
+    binmode $output_err_fh, ':utf8';
+
     my ( $input_err_fh, $output_err_fh );
     pipe $input_err_fh, $output_err_fh;
 
