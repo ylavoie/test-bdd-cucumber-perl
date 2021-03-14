@@ -66,7 +66,11 @@ sub _next {
                         push @buf, split(/\n/, $part, -1);
                         $part = pop @buf;
 
-                        return shift @buf if @buf;
+                        my $rv = shift @buf;
+                        if (defined $rv) {
+                            utf8::decode($rv);
+                            return $rv;
+                        }
                     }
                 }
             }
@@ -98,4 +102,3 @@ sub get_select_handles {
 
 
 1;
-
